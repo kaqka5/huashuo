@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>画说 · AI 图解笔记</title>
+<meta name="description" content="把 AI 的回答拆成可在无限画布上拖动、圈画、拆分、追问的卡片。" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='7' fill='%23f7f4ec' stroke='%231b1b1f' stroke-width='2.4'/%3E%3Cpath d='M10 21c2.5-1 3.5-8 5.5-8s1.5 6 6.5 4' fill='none' stroke='%231b1b1f' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+
+<div class="app" id="app" data-state="home">
+
+  <!-- ══════════════ 顶栏：① 工具栏 · ② 主题 · ④ 要求 ══════════════ -->
+  <header class="topbar" id="topbar">
+    <div class="topbar-left">
+      <button class="icon-btn menu-btn" id="btnMenu" title="设置（Ctrl+,）" aria-label="设置">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+          <path d="M4 7h9M4 12h16M4 17h11"/>
+          <circle cx="16.5" cy="7" r="2.2"/><circle cx="17.5" cy="17" r="2.2"/>
+        </svg>
+      </button>
+
+      <div class="toolbar" id="toolbar" role="toolbar" aria-label="标注工具">
+        <button class="tool" data-tool="move" title="移动 / 平移画布（V）">
+          <svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/><path d="M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/></svg>
+          <span>移动</span>
+        </button>
+        <button class="tool" data-tool="line" title="划线工具（L）｜画一条线，线跟着卡片走">
+          <svg viewBox="0 0 24 24"><path d="M4.5 19.5L19.5 4.5"/><circle cx="4.5" cy="19.5" r="1.8"/><circle cx="19.5" cy="4.5" r="1.8"/></svg>
+          <span>划线</span>
+        </button>
+        <button class="tool" data-tool="circle" title="画圈工具（C）｜圈住文字，圈跟着卡片走">
+          <svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="8.4" ry="6.2" transform="rotate(-6 12 12)"/><path d="M5.6 14.4c4.2-2.6 8.6-3.2 12.6-1.6" opacity=".55"/></svg>
+          <span>画圈</span>
+        </button>
+        <button class="tool" data-tool="rect" title="画方框（R）｜框住一段，框跟着卡片走">
+          <svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="1.5"/><path d="M4.6 17.2c4.6-1 9.4-1.1 14.6-.4" opacity=".5"/></svg>
+          <span>方框</span>
+        </button>
+        <button class="tool" data-tool="ask" title="框选提问（Q）｜框住一句话，让它单独长出答案">
+          <svg viewBox="0 0 24 24"><path d="M4 8V5.5A1.5 1.5 0 015.5 4H8M16 4h2.5A1.5 1.5 0 0120 5.5V8M20 16v2.5a1.5 1.5 0 01-1.5 1.5H16M8 20H5.5A1.5 1.5 0 014 18.5V16" stroke-dasharray="2.6 2.4"/><path d="M10 15.5c0-2.6 4-2.2 4-4.6a2 2 0 10-3.7-1"/><circle cx="10.4" cy="17.6" r=".9" fill="currentColor" stroke="none"/></svg>
+          <span>提问</span>
+        </button>
+        <button class="tool" data-tool="keep" title="重点截取（K）｜只留下框住的那几行">
+          <svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="1.6" stroke-dasharray="2.6 2.4"/><path d="M7.5 9.5h9M7.5 12.8h9M7.5 16.1h5.5" stroke-width="2.2"/></svg>
+          <span>截取</span>
+        </button>
+        <button class="tool" data-tool="split" title="分框（S）｜在点击处把一张卡切成上下两张">
+          <svg viewBox="0 0 24 24"><rect x="4" y="3.6" width="16" height="16.8" rx="1.6"/><path d="M3 12h18" stroke-dasharray="2.4 2.2"/><path d="M9.6 8.4l2.4-2.2 2.4 2.2M9.6 15.6l2.4 2.2 2.4-2.2"/></svg>
+          <span>分框</span>
+        </button>
+        <div class="tool-sep"></div>
+        <button class="tool" data-tool="plot" id="btnPlot" title="画函数图（P）｜框选卡片里的式子直接画；再点一次手动输入">
+          <svg viewBox="0 0 24 24"><path d="M3.5 20.5h17M3.5 20.5V3.5"/><path d="M5 17c2.6-6.4 4.4-9.4 6.2-9.4 1.9 0 2.2 3.4 3.4 5.6 1 1.9 1.9 2.9 3.4 2.9h3"/></svg>
+          <span>函数图</span>
+        </button>
+        <button class="tool" id="btnUndo" title="撤回（Ctrl+Z）" disabled>
+          <svg viewBox="0 0 24 24"><path d="M4.5 9.5h9.2a5.3 5.3 0 010 10.6H9"/><path d="M8.6 5.2L4.2 9.6l4.4 4.3"/></svg>
+          <span>撤回</span>
+        </button>
+        <button class="tool" id="btnRedo" title="重做（Ctrl+Shift+Z）" disabled>
+          <svg viewBox="0 0 24 24"><path d="M19.5 9.5h-9.2a5.3 5.3 0 000 10.6H15"/><path d="M15.4 5.2l4.4 4.4-4.4 4.3"/></svg>
+          <span>重做</span>
+        </button>
+        <button class="tool" id="btnExport" title="导出画布为图片（Ctrl+E）">
+          <svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="8.6" cy="9.4" r="1.5"/><path d="M4 16.4l4.6-4.2 3.3 2.9 3.1-3.6L20 16.8"/></svg>
+          <span>导出</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="topbar-mid">
+      <button class="chip chip-topic" id="chipTopic" title="② 这张图的主题（可编辑）">
+        <img class="chip-thumb" id="topicThumb" alt="" hidden />
+        <span class="chip-k" aria-hidden="true">②</span>
+        <span class="chip-label" id="topicLabel">还没有主题</span>
+      </button>
+    </div>
+
+    <div class="topbar-right">
+      <button class="chip chip-req" id="chipReq" title="④ 你最开始提的要求（可编辑）">
+        <span class="chip-k" aria-hidden="true">④</span>
+        <span class="chip-label" id="reqLabel">还没有要求</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ══════════════ ⑤ 无限画布 ══════════════ -->
+  <main class="stage" id="stage">
+    <div class="viewport" id="viewport">
+      <div class="world" id="world">
+        <div class="paper-frame" id="paperFrame"></div>
+        <div class="layer" id="layerBoxes"></div>
+        <svg class="layer svg-layer" id="layerSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div class="layer" id="layerFrames"></div>
+      </div>
+    </div>
+
+    <!-- 工具拖拽时的临时选框（视口坐标） -->
+    <div class="marquee" id="marquee" hidden></div>
+    <div class="snap-line" id="snapLine" hidden></div>
+
+    <!-- 画布右下角：缩放 -->
+    <div class="zoom-dock">
+      <button class="zoom-btn" id="btnZoomOut" title="缩小">−</button>
+      <button class="zoom-val" id="zoomVal" title="点击回到 100%">100%</button>
+      <button class="zoom-btn" id="btnZoomIn" title="放大">+</button>
+      <button class="zoom-btn wide" id="btnFit" title="缩放到全部内容（F）">适应</button>
+    </div>
+
+    <!-- 首页大字 -->
+    <div class="hero" id="hero">
+      <div class="hero-mark">画说</div>
+      <h1>把要求交给我，<br />拆成一张张能拖、能画、能追问的卡片。</h1>
+      <p class="hero-sub">题目分步讲 · 文章按段解 · 英文一行原文一行译文</p>
+      <div class="hero-acts">
+        <button class="btn-ghost" id="btnDemo1">看一个题目示例</button>
+        <button class="btn-ghost" id="btnDemo2">看一篇英文示例</button>
+      </div>
+    </div>
+
+    <!-- 底部输入框 -->
+    <div class="composer-wrap" id="composerWrap">
+      <div class="attach-list" id="attachList"></div>
+      <div class="composer" id="composer">
+        <textarea id="promptInput" rows="1" placeholder="请输入您的要求" spellcheck="false"></textarea>
+        <div class="composer-bar">
+          <div class="mode-seg" id="modeSeg" role="tablist" aria-label="内容类型">
+            <button class="mode on" data-mode="auto" title="让 AI 自己判断">自动</button>
+            <button class="mode" data-mode="problem" title="按题目分步讲解">题目</button>
+            <button class="mode" data-mode="article" title="按段落先原文后解释">文章</button>
+            <button class="mode" data-mode="en" title="一行原文一行译文">中英</button>
+          </div>
+          <div class="composer-actions">
+            <button class="round-btn send" id="btnSend" title="发送（Enter）" disabled>
+              <svg viewBox="0 0 24 24"><path d="M12 19V5.5"/><path d="M6 11.4l6-6 6 6"/></svg>
+            </button>
+            <button class="round-btn plus" id="btnAttach" title="添加图片和文件">
+              <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+          </div>
+        </div>
+        <input type="file" id="fileInput" multiple hidden
+               accept="image/*,.txt,.md,.markdown,.csv,.json,.log,.html,.htm,.docx,.pdf" />
+      </div>
+      <div class="composer-hint" id="composerHint">
+        Enter 发送 · Shift + Enter 换行 · 也可以把图片、文本文件直接拖进来
+      </div>
+    </div>
+
+    <div class="toasts" id="toasts" aria-live="polite"></div>
+  </main>
+</div>
+
+<!-- ══════════════ 设置抽屉 ══════════════ -->
+<div class="drawer-mask" id="drawerMask" hidden></div>
+<aside class="drawer" id="drawer" aria-label="设置" hidden>
+  <div class="drawer-head">
+    <span class="drawer-title">设置</span>
+    <button class="icon-btn" id="btnCloseDrawer" title="关闭（Esc）">
+      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+
+  <div class="drawer-body">
+    <section class="drawer-sec">
+      <h3><span class="num">①</span>AI 接口</h3>
+      <p class="hint">
+        密钥只保存在你自己的浏览器里，请求直接发给你选的服务商，本站没有后端、不经过任何中间服务器。
+      </p>
+
+      <label class="field">
+        <span>服务商</span>
+        <select id="aiPreset"></select>
+      </label>
+      <label class="field">
+        <span>API 地址</span>
+        <input id="aiBase" type="text" spellcheck="false" placeholder="https://api.deepseek.com/v1" />
+      </label>
+      <label class="field">
+        <span>API Key</span>
+        <div class="pw">
+          <input id="aiKey" type="password" spellcheck="false" placeholder="sk-..." />
+          <button class="pw-eye" id="btnEye" title="显示 / 隐藏">👁</button>
+        </div>
+      </label>
+      <label class="field">
+        <span>模型名</span>
+        <input id="aiModel" type="text" spellcheck="false" placeholder="deepseek-chat" />
+      </label>
+
+      <div class="row gap">
+        <button class="btn primary" id="btnSaveAI">保存设置</button>
+        <button class="btn" id="btnTestAI">测试连接</button>
+      </div>
+      <div class="test-msg" id="testMsg"></div>
+
+      <p class="hint">
+        DeepSeek 的密钥在
+        <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener">platform.deepseek.com/api_keys</a>
+        申请（需先充值）。浏览器直连被跨域拦截时，用「复制提示词 → 粘贴 AI 回答」即可，效果一样。
+      </p>
+    </section>
+
+    <section class="drawer-sec">
+      <h3><span class="num">②</span>主题</h3>
+      <div class="seg" id="themeSeg">
+        <button data-theme="light">浅</button>
+        <button data-theme="dark">深</button>
+      </div>
+    </section>
+
+    <section class="drawer-sec">
+      <h3><span class="num">③</span>画布</h3>
+      <div class="row gap wrap">
+        <button class="btn" id="btnNew">新建空白</button>
+        <button class="btn" id="btnDemo3">载入示例</button>
+        <button class="btn danger" id="btnClear">清空画布</button>
+      </div>
+      <p class="hint">内容会自动存在这台电脑的浏览器里，关掉页面再打开还在。</p>
+
+      <h3 style="margin-top:16px"><span class="num">⇅</span>换个浏览器 / 换台电脑</h3>
+      <div class="row gap wrap">
+        <button class="btn" id="btnExportProject">导出项目文件</button>
+        <button class="btn" id="btnImportProject">导入项目文件</button>
+      </div>
+      <input type="file" id="importFile" accept=".json,application/json" hidden />
+      <p class="hint">导出的是一个 .json，里面是整块画布（卡片、墨迹、连线）。换台电脑打开同一个网址，导入这个文件就能接着用。</p>
+    </section>
+
+    <section class="drawer-sec">
+      <h3><span class="num">④</span>快捷键</h3>
+      <div class="key-list" id="keyList"></div>
+      <div class="row gap" style="margin-top:10px">
+        <button class="btn tiny" id="btnResetKeys">恢复默认</button>
+      </div>
+      <p class="hint">点右边的键位，再按你想用的字母就能改。系统快捷键（Ctrl+Z 撤回、Ctrl+E 导出）不在这里改。</p>
+    </section>
+
+    <div class="drawer-foot">
+      <span>画说 <b id="appVersion">v0.1</b></span>
+      <span id="appBuild">2026-11-06</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ══════════════ 通用弹窗 ══════════════ -->
+<div class="modal-mask" id="modalMask" hidden>
+  <div class="modal" id="modal" role="dialog" aria-modal="true"></div>
+</div>
+
+<script src="js/core.js"></script>
+<script src="js/shortcuts.js"></script>
+<script src="js/mathfmt.js"></script>
+<script src="js/markdown.js"></script>
+<script src="js/fileread.js"></script>
+<script src="js/canvas.js"></script>
+<script src="js/boxes.js"></script>
+<script src="js/annotate.js"></script>
+<script src="js/plot.js"></script>
+<script src="js/menu.js"></script>
+<script src="js/tools.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/pdftext.js"></script>
+<script src="js/exporter.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
