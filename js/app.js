@@ -1,5 +1,5 @@
 /* ============================================================
- * 画说 · app.js
+ * Branch · app.js
  * 界面装配：输入框、附件、设置抽屉、示例、复制粘贴模式
  * ============================================================ */
 (function (global) {
@@ -44,6 +44,13 @@
     bindUI();
     bindBus();
     bindContextMenu();
+
+    /* 平板：双指缩放、笔/手指分流、长按菜单 */
+    if (EM.touch) {
+      EM.touch.bind();
+      EM.touch.initUI();
+    }
+    registerSW();
 
     if (!EM.state.view || (EM.state.view.x === 0 && EM.state.view.y === 0 && EM.state.view.k === 1 && !saved)) {
       EM.canvas.resetView();
@@ -507,6 +514,65 @@
   EM.app.pasteBoxAt = pasteBoxAt;
   EM.app.hasBoxClipboard = function () { return !!boxClipboard; };
 
+  /** 卡片的右键菜单（桌面右键 / 平板长按共用） */
+  EM.app.cardMenu = function (b, x, y) {
+    EM.menu.open(x, y, [
+      {
+        label: '编辑这张卡的文字', fn: function () {
+          var el = EM.boxes.getEl(b.id);
+          if (!el) return;
+          var body = el.querySelector('.box-body') || el.querySelector('.qa-question');
+          if (EM.touch && EM.touch.beginEdit) EM.touch.beginEdit(body);
+          else if (body) { body.setAttribute('contenteditable', 'true'); body.focus(); }
+        }
+      },
+      { sep: true },
+      {
+        label: '复制回答框', fn: function () {
+          copyBoxToClip(b);
+          EM.toast('已复制这张卡片，右键空白处可以粘贴');
+        }
+      },
+      {
+        label: '剪切回答框', fn: function () {
+          copyBoxToClip(b);
+          EM.history.push('剪切卡片');
+          EM.boxes.remove(b.id);
+          EM.toast('已剪切，右键空白处可以粘贴');
+        }
+      },
+      { sep: true },
+      {
+        label: '复制文字到剪贴板', fn: function () {
+          EM.app.copyText(EM.boxes.textOf(b), '文字已复制');
+        }
+      },
+      { sep: true },
+      {
+        label: '删除这张卡片', danger: true, fn: function () {
+          EM.history.push('删除卡片');
+          EM.boxes.remove(b.id);
+          EM.toast('已删除一张卡片', { action: { label: '撤回', fn: function () { EM.history.undo(); } } });
+        }
+      }
+    ]);
+  };
+
+  /** 空白处菜单 */
+  EM.app.canvasMenu = function (x, y) {
+    var p = EM.canvas.toWorld(x, y);
+    EM.menu.open(x, y, [
+      {
+        label: '粘贴回答框',
+        disabled: !boxClipboard,
+        fn: function () { pasteBoxAt(p.x, p.y); }
+      },
+      { sep: true },
+      { label: '画函数图…', fn: function () { EM.plot.openDialog({}); } },
+      { label: '缩放到全部内容', fn: function () { EM.canvas.fit(); } }
+    ]);
+  };
+
   function bindContextMenu() {
     document.addEventListener('contextmenu', function (e) {
       if (EM.modal.isOpen()) return;
@@ -517,52 +583,13 @@
         e.preventDefault();
         var b = EM.state.box(boxEl.dataset.id);
         if (!b) return;
-        EM.menu.open(e.clientX, e.clientY, [
-          {
-            label: '复制回答框', fn: function () {
-              copyBoxToClip(b);
-              EM.toast('已复制这张卡片，右键空白处可以粘贴');
-            }
-          },
-          {
-            label: '剪切回答框', fn: function () {
-              copyBoxToClip(b);
-              EM.history.push('剪切卡片');
-              EM.boxes.remove(b.id);
-              EM.toast('已剪切，右键空白处可以粘贴');
-            }
-          },
-          { sep: true },
-          {
-            label: '复制文字到剪贴板', fn: function () {
-              EM.app.copyText(EM.boxes.textOf(b), '文字已复制');
-            }
-          },
-          { sep: true },
-          {
-            label: '删除这张卡片', danger: true, fn: function () {
-              EM.history.push('删除卡片');
-              EM.boxes.remove(b.id);
-              EM.toast('已删除一张卡片', { action: { label: '撤回', fn: function () { EM.history.undo(); } } });
-            }
-          }
-        ]);
+        EM.app.cardMenu(b, e.clientX, e.clientY);
         return;
       }
 
       if (e.target.closest('#stage')) {
         e.preventDefault();
-        var p = EM.canvas.toWorld(e.clientX, e.clientY);
-        EM.menu.open(e.clientX, e.clientY, [
-          {
-            label: '粘贴回答框',
-            disabled: !boxClipboard,
-            fn: function () { pasteBoxAt(p.x, p.y); }
-          },
-          { sep: true },
-          { label: '画函数图…', fn: function () { EM.plot.openDialog({}); } },
-          { label: '缩放到全部内容', fn: function () { EM.canvas.fit(); } }
-        ]);
+        EM.app.canvasMenu(e.clientX, e.clientY);
       }
     });
   }
@@ -1002,6 +1029,19 @@
   }
 
   EM.app.loadDemo = loadDemo;
+
+  /* ============================================================
+   * 离线缓存（只在 https / localhost 下注册）
+   * ========================================================== */
+  function registerSW() {
+    if (!('serviceWorker' in navigator)) return;
+    var https = location.protocol === 'https:';
+    var local = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    if (!https && !local) return;
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () { /* 忽略 */ });
+    });
+  }
 
   /* ============================================================
    * 免密钥：复制提示词 → 粘贴回答

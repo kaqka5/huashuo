@@ -1,5 +1,5 @@
 /* ============================================================
- * 画说 · canvas.js
+ * Branch · canvas.js
  * ⑤ 无限画布：平移、缩放、坐标换算、画布边界自动扩展
  * ============================================================ */
 (function (global) {
@@ -332,16 +332,28 @@
   /* ---------------- 平移交互 ---------------- */
   var panning = null;
 
+  /* 双指缩放开始时，打断正在进行的平移 */
+  EM.canvas.cancelPan = function () {
+    panning = null;
+    var st = document.getElementById('stage');
+    if (st) st.classList.remove('is-panning');
+  };
+
   EM.canvas.bindPan = function () {
     viewport.addEventListener('pointerdown', function (e) {
       var isMiddle = e.button === 1;
       var isSpace = EM.keys && EM.keys.space;
       var isBackground = !e.target.closest('.box') && !e.target.closest('.sel-frame');
 
+      /* 手指：只要没开"手指也能画"，一律当平移（不管当前是什么工具） */
+      var fingerPan = e.pointerType === 'touch' && !(EM.touch && EM.touch.fingerDraw());
+
       var allow =
         isMiddle ||
         isSpace ||
-        (isBackground && (EM.tools ? EM.tools.current === 'move' : true) && e.button === 0);
+        (isBackground && (EM.tools ? EM.tools.current === 'move' : true) && e.button === 0) ||
+        (fingerPan && e.button === 0 && isBackground &&
+          !e.target.closest('.composer-wrap, .zoom-dock, .drawer, .modal, .ctx-menu, .keep-bar, .ask-pop'));
 
       if (!allow) return;
 
@@ -370,7 +382,6 @@
       document.addEventListener('pointermove', move);
       document.addEventListener('pointerup', up);
     });
-
     /* 滚轮 */
     viewport.addEventListener('wheel', function (e) {
       if (e.ctrlKey || e.metaKey) {

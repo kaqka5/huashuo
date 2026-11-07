@@ -1,5 +1,5 @@
 /* ============================================================
- * 画说 · mathfmt.js
+ * Branch · mathfmt.js
  * 轻量 LaTeX 排版：把常见数学写法转成 HTML（不联网、不依赖 KaTeX）
  * 支持 \frac \sqrt[n]{} ^ _ \text \mathbf \vec \overline
  *      \begin{cases} / matrix / aligned、希腊字母与常用符号

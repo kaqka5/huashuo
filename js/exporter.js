@@ -1,5 +1,5 @@
 /* ============================================================
- * 画说 · exporter.js
+ * Branch · exporter.js
  * 把 ⑤ 画布导出成一张 PNG（纯前端，用 SVG foreignObject 截屏）
  * ============================================================ */
 (function (global) {
@@ -234,7 +234,7 @@
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
-    a.download = 'huashuo-' + stamp() + '.svg';
+    a.download = 'branch-' + stamp() + '.svg';
     document.body.appendChild(a);
     a.click();
     setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 400);
@@ -292,7 +292,7 @@
         built = buildSvg(bounds, pad, scale, css);
         return rasterize(built.svg, built.W, built.H, scale);
       }).then(function (canvas) {
-        var name = 'huashuo-' + stamp() + '.png';
+        var name = 'branch-' + stamp() + '.png';
         return download(canvas, name).then(function (ok) {
           if (!ok) {
             downloadSVG(built.svg);
@@ -320,7 +320,7 @@
       var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       var a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = 'huashuo-' + stamp() + '.json';
+      a.download = 'branch-' + stamp() + '.json';
       a.click();
       setTimeout(function () { URL.revokeObjectURL(a.href); }, 500);
     }

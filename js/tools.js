@@ -1,5 +1,5 @@
 /* ============================================================
- * 画说 · tools.js
+ * Branch · tools.js
  * ① 工具栏：划线 / 画圈 / 方框 / 框选提问 / 重点截取 / 分框
  * ============================================================ */
 (function (global) {
@@ -56,6 +56,18 @@
         b.classList.toggle('on', b.dataset.tool === name);
       });
       document.documentElement.dataset.tool = name;
+
+      /* 触屏上：画图工具激活时，卡片正文不接受触摸 —— 否则一点就聚焦、弹出手写键盘 */
+      var drawTool = (name === 'line' || name === 'circle' || name === 'rect' || name === 'ask' || name === 'keep' || name === 'plot');
+      document.documentElement.classList.toggle('draw-tool', drawTool);
+      if (drawTool) {
+        var ae = document.activeElement;
+        if (ae && ae.isContentEditable) {
+          ae.blur();
+          var sel = window.getSelection();
+          if (sel && sel.rangeCount) sel.removeAllRanges();
+        }
+      }
 
       if (name !== 'move') EM.annotate.select(null);
       if (name !== 'split') hideSnap();
@@ -126,6 +138,9 @@
     var stageRect = stage.getBoundingClientRect();
     var start = EM.canvas.toWorld(e.clientX, e.clientY);
 
+    /* 手指且没开"手指也能画" → 这下手势交给画布平移，不画东西 */
+    if (!EM.touch.shouldDraw(e)) return;
+
     if (t === 'split') {
       var hit = EM.canvas.boxAt(start.x, start.y);
       if (!hit) { EM.toast('点在一张卡片的正文上，才能切'); return; }
@@ -169,6 +184,17 @@
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
   }
+
+  /* 双指缩放时，把正在进行的拖拽取消掉（不留痕迹） */
+  EM.tools.cancelDrag = function () {
+    if (!drag) return;
+    drag = null;
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    marquee.hidden = true;
+    marquee.classList.remove('keep');
+    EM.annotate.clearPreview();
+  };
 
   function onMove(e) {
     if (!drag) return;

@@ -1,5 +1,5 @@
 /* ============================================================
-   画说 · AI 图解笔记  —  样式表
+   Branch · AI 图解笔记  —  样式表
    墨与纸：一个能拖、能画、能拆的无限画布
    ============================================================ */
 
@@ -1918,3 +1918,86 @@ html[data-theme="dark"] .keep-bar .kb-ok { color: #16171b; }
   user-drag: none;
   cursor: inherit;
 }
+
+/* ============================================================
+   平板 / 触控（v1.1）
+   ============================================================ */
+
+/* 用 dvh 让移动浏览器的地址栏收起时不留白 */
+@supports (height: 100dvh) {
+  html, body { height: 100dvh; }
+}
+
+/* 画布自己处理手势，别让浏览器抢着滚动/缩放 */
+#stage, .viewport, .stage { touch-action: none; }
+
+/* 触摸设备上：放大命中区和按钮，关掉长按系统菜单 */
+html.has-touch .stroke.hit, html.is-touch .stroke.hit { stroke-width: 26; }
+html.has-touch .box, html.is-touch .box { -webkit-touch-callout: none; }
+html.has-touch .box-act, html.is-touch .box-act { width: 30px; height: 30px; }
+html.has-touch .stroke-del circle, html.is-touch .stroke-del circle { r: 12; }
+html.has-touch .merge-hint, html.is-touch .merge-hint { display: none; }
+
+/* 双指缩放进行中，别显示拖动中的提示 */
+#stage.is-pinching .merge-hint,
+#stage.is-pinching .marquee { display: none !important; }
+#stage.is-pinching .box { transition: none !important; }
+
+/* ---------- 平板尺寸：按钮稍微放大，间距收紧 ---------- */
+@media (min-width: 901px) and (max-width: 1400px) {
+  .topbar { padding: 9px 11px; gap: 9px; }
+  .tool { height: 40px; padding: 0 11px; gap: 6px; }
+  .tool svg { width: 18px; height: 18px; }
+  .tool span { display: none; }          /* 图标模式，给 ② ④ 腾地方 */
+  .chip { max-width: 23vw; padding: 0 10px; }
+  .drawer { width: min(440px, 92vw); }
+  .composer-wrap { bottom: max(14px, env(safe-area-inset-bottom)); }
+}
+
+/* 平板竖屏 */
+@media (orientation: portrait) and (min-width: 700px) and (max-width: 1200px) {
+  .tool span { display: none; }
+  .tool { padding: 0 10px; height: 40px; }
+  .chip-topic { max-width: 34vw; }
+  .chip-req { display: none; }
+}
+
+/* 输入框贴底时避开手势条 */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .composer-wrap { bottom: max(14px, env(safe-area-inset-bottom)); }
+}
+
+/* 设置里的开关行 */
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 8px;
+  font-family: var(--font-read);
+  font-size: 13.5px;
+  color: var(--ink);
+  cursor: pointer;
+  user-select: none;
+}
+.check-row input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.drawer-sec.is-quiet { display: none; }
+
+/* ---------- 触屏：画画时卡片正文不接触摸 ----------
+   卡片正文是 contenteditable，平板上一点就会聚焦、弹出手写键盘，
+   导致笔根本画不上去。画图工具激活期间让它"透明"，事件直接落到画布。 */
+html.has-touch.draw-tool .box-body,
+html.has-touch.draw-tool .qa-question,
+html.has-touch.draw-tool .box-title,
+html.has-touch.draw-tool .box-no {
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+html.has-touch.draw-tool .box { -webkit-user-select: none; user-select: none; }
+/* 卡片照样能拖（标题栏），但正文不抢事件 */
+html.has-touch.draw-tool .box-body { cursor: crosshair; }
