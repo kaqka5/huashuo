@@ -169,7 +169,15 @@
     });
 
     $('btnSend').addEventListener('click', send);
-    $('btnAttach').addEventListener('click', function () { $('fileInput').click(); });
+    /* 加号改成 <label for="fileInput">：由浏览器原生唤起选择器。
+       装成桌面应用（standalone）后，JS 调 input.click() 有时会被拦掉。 */
+    $('btnAttach').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        $('fileInput').click();
+      }
+    });
+
     $('fileInput').addEventListener('change', function (e) {
       addFiles(e.target.files);
       e.target.value = '';

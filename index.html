@@ -143,13 +143,14 @@
             <button class="round-btn send" id="btnSend" title="发送（Enter）" disabled>
               <svg viewBox="0 0 24 24"><path d="M12 19V5.5"/><path d="M6 11.4l6-6 6 6"/></svg>
             </button>
-            <button class="round-btn plus" id="btnAttach" title="添加图片和文件">
+            <label class="round-btn plus" id="btnAttach" title="添加图片和文件">
               <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-            </button>
+              <input type="file" id="fileInput" class="attach-input" multiple
+                     accept="image/*,.txt,.md,.markdown,.csv,.json,.log,.html,.htm,.docx,.pdf" />
+            </label>
           </div>
         </div>
-        <input type="file" id="fileInput" multiple hidden
-               accept="image/*,.txt,.md,.markdown,.csv,.json,.log,.html,.htm,.docx,.pdf" />
+
       </div>
       <div class="composer-hint" id="composerHint">
         Enter 发送 · Shift + Enter 换行 · 也可以把图片、文本文件直接拖进来
@@ -226,6 +227,11 @@
         <button class="btn danger" id="btnClear">清空画布</button>
       </div>
       <p class="hint">内容会自动存在这台电脑的浏览器里，关掉页面再打开还在。</p>
+
+      <div class="row gap wrap" style="margin-top:10px">
+        <label class="btn" for="fileInput">添加图片 / 文件</label>
+        <span class="hint" style="margin:0">和输入框右边的 ＋ 是同一个入口</span>
+      </div>
 
       <h3 style="margin-top:16px"><span class="num">⇅</span>换个浏览器 / 换台电脑</h3>
       <div class="row gap wrap">
