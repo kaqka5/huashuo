@@ -1004,6 +1004,7 @@
   var hintEl = null;
 
   function startDrag(e, el, b) {
+    if (e.isPrimary === false) return;      /* 第二根手指别拖卡片 */
     e.preventDefault();
     e.stopPropagation();
     if (el.querySelector('.box-title').getAttribute('contenteditable') === 'true') return;

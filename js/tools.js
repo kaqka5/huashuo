@@ -96,6 +96,7 @@
    * ========================================================== */
   function onPointerDown(e) {
     if (e.button !== 0) return;
+    if (e.isPrimary === false) return;      /* 第二根手指不画东西，留给双指缩放 */
     if (EM.modal.isOpen()) return;
     if (e.target.closest('.composer-wrap, .zoom-dock, .toasts, .drawer, .modal, .keep-bar, .ask-pop, .ctx-menu')) return;
 

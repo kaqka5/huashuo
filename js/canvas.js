@@ -359,6 +359,9 @@
 
   EM.canvas.bindPan = function () {
     viewport.addEventListener('pointerdown', function (e) {
+      /* 第二根手指不参与平移：否则它会和双指缩放叠加，画面在两指之间来回抖 */
+      if (e.isPrimary === false) return;
+
       var isMiddle = e.button === 1;
       var isSpace = EM.keys && EM.keys.space;
       var isBackground = !e.target.closest('.box') && !e.target.closest('.sel-frame');
