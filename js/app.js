@@ -63,6 +63,8 @@
     renderAttachments();
     EM.history.refresh();
 
+    fillEnvInfo();
+
     /* 版本号 */
     var vEl = document.getElementById('appVersion');
     var bEl = document.getElementById('appBuild');
@@ -1037,6 +1039,39 @@
   }
 
   EM.app.loadDemo = loadDemo;
+
+  /* ============================================================
+   * 环境自检：写进设置抽屉底部，用来排查"独立窗口里选不了文件"
+   * ========================================================== */
+  function fillEnvInfo() {
+    var el = document.getElementById('envInfo');
+    if (!el) return;
+
+    var ua = navigator.userAgent || '';
+    var standalone = false;
+    try {
+      standalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+    } catch (e) { }
+
+    var engine = '其它';
+    if (/; wv\)/.test(ua)) engine = 'WebView';
+    else if (/SamsungBrowser/.test(ua)) engine = '三星浏览器';
+    else if (/EdgA?\//.test(ua)) engine = 'Edge';
+    else if (/Firefox\//.test(ua)) engine = 'Firefox';
+    else if (/Chrome\//.test(ua)) engine = 'Chrome';
+
+    el.textContent = (standalone ? '独立窗口' : '浏览器标签页') + ' · ' + engine +
+      ' · 触摸点 ' + (navigator.maxTouchPoints || 0);
+
+    if (engine === 'WebView') {
+      setTimeout(function () {
+        EM.toast('这个图标是内嵌浏览器打开的，选文件可能用不了；改用 Chrome 打开网址就行');
+      }, 900);
+    }
+  }
+
+  EM.app.fillEnvInfo = fillEnvInfo;
+
 
   /* ============================================================
    * 离线缓存（只在 https / localhost 下注册）

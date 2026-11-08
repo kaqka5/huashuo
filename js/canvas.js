@@ -85,6 +85,24 @@
       canvasApi.apply();
     },
 
+    /* 双指缩放：一次性算好，避免"先缩放再平移"两步叠加造成的抖动 */
+    pinchAt: function (fromCx, fromCy, toCx, toCy, factor) {
+      var v = EM.state.view;
+      var k2 = U.clamp(v.k * factor, MIN_K, MAX_K);
+      if (k2 === v.k && fromCx === toCx && fromCy === toCy) return;
+
+      var r = viewport.getBoundingClientRect();
+      var fx = fromCx - r.left, fy = fromCy - r.top;
+      var tx = toCx - r.left, ty = toCy - r.top;
+
+      // 让 from 点下的内容落到 to 点，同时缩放 k2/k
+      var ratio = k2 / v.k;
+      v.x = tx - (fx - v.x) * ratio;
+      v.y = ty - (fy - v.y) * ratio;
+      v.k = k2;
+      canvasApi.apply();
+    },
+
     zoomStep: function (dir) {
       var r = viewport.getBoundingClientRect();
       canvasApi.zoomAt(r.left + r.width / 2, r.top + r.height / 2, dir > 0 ? 1.18 : 1 / 1.18);

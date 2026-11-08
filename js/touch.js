@@ -84,24 +84,38 @@
     cancelLongPress();
   }
 
+  /* 把这一帧的缩放攒起来做一次：两个手指先后到达的 move 事件会让
+     "中点"来回跳，逐条应用就会在两手之间闪。 */
+  var pinchQueued = false;
+
+  function queuePinch() {
+    if (pinchQueued) return;
+    pinchQueued = true;
+    requestAnimationFrame(function () {
+      pinchQueued = false;
+      movePinch();
+    });
+  }
+
   function movePinch() {
     var p = two();
     if (!pinch || !p[0] || !p[1]) return;
+
     var d = Math.hypot(p[1].x - p[0].x, p[1].y - p[0].y);
     var cx = (p[0].x + p[1].x) / 2;
     var cy = (p[0].y + p[1].y) / 2;
 
-    if (pinch.d > 8 && d > 8) {
-      var f = d / pinch.d;
-      if (Math.abs(f - 1) > 0.002) EM.canvas.zoomAt(cx, cy, f);
+    var f = (pinch.d > 8 && d > 8) ? d / pinch.d : 1;
+    var moveX = cx - pinch.cx;
+    var moveY = cy - pinch.cy;
+
+    if (Math.abs(f - 1) > 0.0015 || Math.abs(moveX) + Math.abs(moveY) > 0.4) {
+      EM.canvas.pinchAt(pinch.cx, pinch.cy, cx, cy, f);
     }
-    var dx = cx - pinch.cx, dy = cy - pinch.cy;
-    if (Math.abs(dx) + Math.abs(dy) > 0.5) EM.canvas.panBy(dx, dy);
 
     pinch = { d: d, cx: cx, cy: cy };
     EM.persist.schedule();
   }
-
   function endPinch() {
     pinch = null;
     var st = document.getElementById('stage');
@@ -252,7 +266,7 @@
       if (pts[e.pointerId]) {
         pts[e.pointerId].x = e.clientX;
         pts[e.pointerId].y = e.clientY;
-        if (pinch) movePinch();
+        if (pinch) queuePinch();
       }
       moveLongPress(e);
     }, true);
