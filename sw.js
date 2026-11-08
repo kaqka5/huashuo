@@ -1,5 +1,5 @@
 /* Branch · 离线缓存（改了文件记得把 VERSION 加一） */
-var VERSION = 'branch-v2.1';
+var VERSION = 'branch-v2.2';
 var SHELL = [
   './',
   './index.html',

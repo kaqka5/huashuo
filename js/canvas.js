@@ -119,11 +119,12 @@
     resetView: function () {
       var vw = viewport.clientWidth, vh = viewport.clientHeight;
       var c = EM.state.canvas;
-      var k = U.clamp(Math.min(1, (vw - 48) / c.w, (vh - 48) / c.h), 0.5, 1);
+      /* 画布比视口大时不再硬缩进去：保持接近 1:1，居中显示中间那块 */
+      var k = U.clamp(Math.min(1, (vw - 48) / c.w, (vh - 48) / c.h), 0.8, 1);
       canvasApi.setView({
         k: k,
-        x: Math.max(16, (vw - c.w * k) / 2),
-        y: Math.max(16, (vh - c.h * k) / 2)
+        x: Math.round((vw - c.w * k) / 2),
+        y: Math.round((vh - c.h * k) / 2)
       });
     },
 

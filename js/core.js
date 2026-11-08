@@ -7,7 +7,7 @@
 
   var EM = (global.EM = global.EM || {});
 
-  EM.VERSION = '2.1';
+  EM.VERSION = '2.2';
   EM.BUILD = '2026-11-06';
 
   /* ------------------------------------------------------------
@@ -85,7 +85,7 @@
    * 3. 状态
    * ---------------------------------------------------------- */
   var DEFAULT_VIEW = { x: 0, y: 0, k: 1 };
-  var DEFAULT_CANVAS = { w: 1180, h: 900 };
+  var DEFAULT_CANVAS = { w: 1680, h: 1200 };
 
   EM.state = {
     version: 1,
