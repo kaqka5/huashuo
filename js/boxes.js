@@ -278,7 +278,21 @@
     beginBatch: function (startY) {
       var a = boxes.stackAnchor();
       var y = startY != null ? startY : a.y;
-      return { x: 80, y: y, colTop: y, colH: 0, colW: BOX_W, maxH: 1020 };
+      var x = 80;
+
+      /* 空画布：第一张卡落在视野正中，而不是从左上角开始 */
+      if (!EM.state.boxes.length) {
+        var vp = document.getElementById('viewport') || document.getElementById('stage');
+        if (vp && EM.canvas) {
+          var r = vp.getBoundingClientRect();
+          var c = EM.canvas.toWorld(r.left + r.width / 2, r.top + r.height / 2);
+          x = Math.round(c.x - BOX_W / 2);
+          y = Math.round(c.y - 70);
+          startY = y;
+        }
+      }
+
+      return { x: x, y: y, colTop: y, colH: 0, colW: BOX_W, maxH: 1020 };
     },
 
     /**

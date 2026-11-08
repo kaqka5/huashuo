@@ -800,8 +800,8 @@
     var count = 0;
     var topicSet = false;
 
-    /* 视口先对准将要出现的位置 */
-    EM.canvas.focusRect({ x: 40, y: cursor.y - 40, w: 560, h: 520 }, { keepZoom: true, maxK: EM.state.view.k, minK: 0.5 });
+    /* 视口先对准将要出现的位置（空画布时 cursor 已在视野中央，这里只是保底） */
+    EM.canvas.focusRect({ x: cursor.x - 40, y: cursor.y - 40, w: 560, h: 520 }, { keepZoom: true, maxK: EM.state.view.k, minK: 0.5 });
 
     function placeCard(card, isLive) {
       var html = cardHtml(card);
@@ -1029,7 +1029,7 @@
       EM.boxes.placeInBatch(cursor, b);
     });
 
-    EM.canvas.expandTo({ x: 80, y: 56, w: cursor.x + EM.boxes.BOX_W, h: cursor.y }, { pad: 260, pulse: false });
+    EM.canvas.expandTo({ x: cursor.x, y: cursor.colTop, w: EM.boxes.BOX_W, h: Math.max(1, cursor.y - cursor.colTop) }, { pad: 260, pulse: false });
     updateChips();
     refreshState();
     EM.history.refresh();
@@ -1082,7 +1082,8 @@
     var local = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
     if (!https && !local) return;
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('sw.js').catch(function () { /* 忽略 */ });
+      /* updateViaCache: 'none' —— 每次都绕过 HTTP 缓存检查 sw.js，否则更新要等十分钟才生效 */
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(function () { /* 忽略 */ });
     });
   }
 
@@ -1154,7 +1155,7 @@
           b.h = el ? el.offsetHeight : 120;
           EM.boxes.placeInBatch(cursor2, b);
         });
-        EM.canvas.expandTo({ x: 80, y: 0, w: cursor2.x + EM.boxes.BOX_W, h: cursor2.y }, { pad: 260 });
+        EM.canvas.expandTo({ x: cursor2.x, y: cursor2.colTop, w: EM.boxes.BOX_W, h: Math.max(1, cursor2.y - cursor2.colTop) }, { pad: 260 });
         EM.history.push('粘贴生成');
         refreshState();
         attachments = [];

@@ -1,5 +1,5 @@
 /* Branch · 离线缓存（改了文件记得把 VERSION 加一） */
-var VERSION = 'branch-v1.9';
+var VERSION = 'branch-v2.1';
 var SHELL = [
   './',
   './index.html',
@@ -48,25 +48,22 @@ self.addEventListener('fetch', function (e) {
   try { url = new URL(req.url); } catch (err) { return; }
   if (url.origin !== location.origin) return;   // AI 接口等外部请求不插手
 
-  /* 页面导航：断网时回到缓存的首页 */
-  if (req.mode === 'navigate') {
-    e.respondWith(
-      fetch(req).catch(function () {
-        return caches.match('./index.html').then(function (r) { return r || caches.match('./'); });
-      })
-    );
-    return;
-  }
-
+  /* 一律"先联网、失败再用缓存"：
+     这样一更新就能马上看到新版，断网时仍能打开 */
   e.respondWith(
-    caches.match(req).then(function (hit) {
-      if (hit) return hit;
-      return fetch(req).then(function (res) {
-        if (res && res.status === 200 && res.type === 'basic') {
-          var copy = res.clone();
-          caches.open(VERSION).then(function (c) { c.put(req, copy); }).catch(function () { });
+    fetch(req).then(function (res) {
+      if (res && res.status === 200 && res.type === 'basic') {
+        var copy = res.clone();
+        caches.open(VERSION).then(function (c) { c.put(req, copy); }).catch(function () { });
+      }
+      return res;
+    }).catch(function () {
+      return caches.match(req).then(function (hit) {
+        if (hit) return hit;
+        if (req.mode === 'navigate') {
+          return caches.match('./index.html').then(function (r) { return r || caches.match('./'); });
         }
-        return res;
+        return Response.error();
       });
     })
   );
